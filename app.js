@@ -39,10 +39,12 @@ var VietnameseSigns = [ "aAeEoOuUiIdDyY-",
 	"ÝỲỴỶỸ",
 	` ,"'?!@#$%^&*()_/<>.|~:–`,
 ];
+
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.split(search).join(replacement);
 };
+
 var vietnameseStringToUrl = function(str) {
     for (var i = 1; i < VietnameseSigns.length; i++)
     {
@@ -51,53 +53,20 @@ var vietnameseStringToUrl = function(str) {
 	}
     return str.toLowerCase();
 }
+
 async function asyncForEach(array, callback) {
   for (let index = 0; index < array.length; index++) {
     await callback(array[index], index, array);
   }
 }
 
-async function loginFB(url){
-  try {
-      const browser = await puppeteer.launch({headless: false});
-      const page = await browser.newPage();
-      await page.setJavaScriptEnabled(false);
-      await page.goto('https://m.facebook.com/');
-
-      
-      await page.type('#m_login_email', '0348373941');
-      await page.type('#m_login_password', 'Phamgiavyvn123');
-      await page.click('._54k8._52jh._56bs._56b_._28lf._56bw._56bu');
-      await page.click('.bl.bn.bo.bp.br.bm');
-      cookieFB = await page.cookies();
-      await browser.close();
-  } catch (error) {
-    console.log("Catch : " + error);
-  }
-}
-
-async function shareFB(content){
-  try {
-      const browser = await puppeteer.launch({headless: false});
-      const page = await browser.newPage();
-      await page.setCookie(...cookieFB);
-      await page.setJavaScriptEnabled(false);
-      await page.goto('https://m.facebook.com/kechuyengame/');
-
-      
-      await page.type('.dw.dx.dy.dz.ea.eb', content);
-      await page.click('.z.ba.bb.ee.ct');
-      await waitFor(500)
-      await browser.close();
-  } catch (error) {
-    console.log("Catch : " + error);
-  }
-}
+//==========================================================================
 
 async function createGetList(url){
   try {
       const browser = await puppeteer.launch({headless: false});
       const page = await browser.newPage();
+      await page.setViewport({width:1920, height:1080})
       await page.goto(url);
 
       const articles = await page.evaluate(() => {
@@ -216,6 +185,7 @@ async function createGetData(url){
       console.log("Catch : " + error);
   }
 };
+
 async function main(listLink) {
   console.log(listLink)
   if(oAuth2Client == ''){
@@ -270,7 +240,6 @@ async function main(listLink) {
   }
 }
 
-
 function getAuthenticatedClient() {
   return new Promise((resolve, reject) => {
     const oAuth2Client = new OAuth2Client(
@@ -307,8 +276,6 @@ function getAuthenticatedClient() {
   });
 }
 
- 
-
 let mainWin;
 function createMainWin(){
     mainWin = new BrowserWindow({
@@ -329,34 +296,11 @@ function createMainWin(){
         );
       });
     })
-    const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-    Menu.setApplicationMenu(mainMenu)
     mainWin.webContents.openDevTools()
     mainWin.on('closed',()=>{
         mainWin = null;
     })
 }
-
-// socket.on('server-res-list-cosplay',async function(data){
-  
-//   await asyncForEach(data, async (el,idx)=>{
-//     var fbContent = el.name + `
-//     `+el.metaDes+`
-//     `+'https://kechuyengame.com/bai-viet/'+el.slug;
-//     await shareFB(fbContent)
-//   })
-// })
-
-const mainMenuTemplate = [
-  {
-      label: 'Login Facebook',
-      click(){loginFB()}
-  },
-  {
-    label: 'share Facebook',
-    click(){socket.emit('client-get-list-cosplay')}
-},
-];
 
 ipcMain.on('user-send-data',async (e,data)=>{
   category = data.category;

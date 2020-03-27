@@ -24,6 +24,69 @@ button{
     </select>
     <div id="link-group">
         <input type="text" class="listLink" placeholder="Nhập link">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        <input type="text" class="listLink" placeholder="Nhập link hình">
+        
     </div>
     <button id="submit">Đăng hàng loạt</button>
     <h1>Trạng thái: <span id="status"></span></h1>
@@ -58,18 +121,18 @@ document.getElementById('html').addEventListener('click', function(){
 const electron = require('electron');
 const {ipcRenderer} = electron;
 const { BrowserWindow } = electron.remote;
-function addInput(){
-    var listLink = document.querySelectorAll('.listLink');
-    listLink[listLink.length - 1].addEventListener('keyup',function(){
+// function addInput(){
+//     var listLink = document.querySelectorAll('.listLink');
+//     listLink[listLink.length - 1].addEventListener('keyup',function(){
         
-        var input = '<input type="text" class="listLink" placeholder="Nhập link hình">'
-        if(!this.nextElementSibling){
-            document.getElementById('link-group').insertAdjacentHTML('beforeend', input)
-        }
-        addInput()
-    })
-}
-addInput()
+//         var input = '<input type="text" class="listLink" placeholder="Nhập link hình">'
+//         if(!this.nextElementSibling){
+//             document.getElementById('link-group').insertAdjacentHTML('beforeend', input)
+//         }
+//         addInput()
+//     })
+// }
+// addInput()
 document.getElementById('get-data').addEventListener('click',function(){
     var postName = document.getElementById('name-post').value,
         postLink = document.getElementById('link-post').value;
