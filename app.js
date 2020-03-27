@@ -37,7 +37,7 @@ var VietnameseSigns = [ "aAeEoOuUiIdDyY-",
 	"Đ",
 	"ýỳỵỷỹ",
 	"ÝỲỴỶỸ",
-	` ,"'?!@#$%^&*()_/<>.|~:–`,
+	` ,"'?!@#$%^&*()_/<>.|~:–.`,
 ];
 
 String.prototype.replaceAll = function(search, replacement) {
