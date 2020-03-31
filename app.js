@@ -3,25 +3,17 @@ const { app, BrowserWindow, Menu,ipcMain } = electron;
 const path = require('path');
 const ejs = require('ejs');
 const fs = require('fs')
-const {OAuth2Client} = require('google-auth-library');
-const http = require('http');
 const url = require('url');
-const open = require('open');
-const destroyer = require('server-destroy');
 const waitFor = (ms) => new Promise(r => setTimeout(r, ms));
-const keys = require('./credentials.json');
 const download = require('image-downloader')
-const Photos = require('googlephotos');
 const puppeteer = require('puppeteer');
 const socket = require('socket.io-client')('https://kechuyengame.com/');
-var oAuth2Client = '';
 var html = '';
 var metaDes = '';
 var title = '';
 var linkindex = 0;
 var listDataLink = [];
 var category = '';
-var cookieFB = ''
 var VietnameseSigns = [ "aAeEoOuUiIdDyY-",
 	"áàạảãâấầậẩẫăắằặẳẵ",
 	"ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
@@ -37,7 +29,7 @@ var VietnameseSigns = [ "aAeEoOuUiIdDyY-",
 	"Đ",
 	"ýỳỵỷỹ",
 	"ÝỲỴỶỸ",
-	` ,"'?!@#$%^&*()_/<>.|~:–.`,
+	` ,"”'?!@#$%^&*()_/<>.|~:–.`,
 ];
 
 String.prototype.replaceAll = function(search, replacement) {
@@ -62,80 +54,31 @@ async function asyncForEach(array, callback) {
 
 //==========================================================================
 
-async function createGetList(url){
-  try {
-      const browser = await puppeteer.launch({headless: false});
-      const page = await browser.newPage();
-      await page.setViewport({width:1920, height:1080})
-      await page.goto(url);
 
-      const articles = await page.evaluate(() => {
-        var div = document.createElement('div');
-        div.setAttribute('id', 'lastoneid');
-        document.querySelector('.B6Rt6d.zcLWac.eejsDc').append(div)
-        document.getElementById("lastoneid").scrollIntoViewIfNeeded()
-        var ar_title = [];
-        document.querySelectorAll('[jsname="NwW5ce"] .p137Zd').forEach(el=>{
-          var href = el.getAttribute('href')
-          ar_title.push(href.replace('./share/',''))
-        })
-        return ar_title
-      });
-      await asyncForEach(articles, async (el,idx)=>{
-        var lastRound = false;
-        if(idx == 0){
-          await creaateGetIMG(el,lastRound)
-        }else if(idx == articles.length - 1){
-          lastRound = true;
-          await creaateGetIMG(el,lastRound)
-        }else{
-          await creaateGetIMG(el, lastRound)
-        }
+async function autoPage(url){
+  const browser = await puppeteer.launch({headless: false});
+  try {
+    const page = await browser.newPage();
+    await page.setJavaScriptEnabled(false);
+    await page.goto(url);
+    var listURL = await page.evaluate(()=>{
+      var listLink=[]
+      document.querySelectorAll('.post .inner .entry-aside > a').forEach(el=>{
+          if(Array.from(el.nextElementSibling.classList).indexOf('review-score') === -1){ listLink.push(el.getAttribute('href'))}
       })
-      await browser.close();
+      return listLink
+    })
+    listDataLink = listURL.reverse()
+    run()
+    await browser.close()
   } catch (error) {
-    console.log("Catch : " + error);
-  }
-}
-
-async function creaateGetIMG(url, lastRound){
-  try {
-      const browser = await puppeteer.launch({headless: false});
-      const page = await browser.newPage();
-      await page.goto('https://photos.google.com/share/'+url);
-
-      const articles = await page.evaluate(() => {
-        var ar_title = document.querySelector('.SzDcob').getAttribute('src');
-        return ar_title
-      });
-      html = html.replace('hereisIMG', '<p><img src ="'+articles+'"/></p>');
-      if(lastRound){
-        var fnData = html.replace(/Mọt tui/g,'Kể chuyện game').replace(/Mọt game/g, 'Kể chuyện game').replace(/Mọt/g,'Kể chuyện game')
-        var obj = {
-          name:title,
-          slug:vietnameseStringToUrl(title),
-          metaDes:metaDes,
-          content:fnData,
-          parentID:category,
-          thumbnail:articles,
-          display:true,
-        }
-        socket.emit('client-send-post-auto', obj);
-        var fbContent = title + `
-        `+metaDes + `
-        `+'https://kechuyengame.com/bai-viet/'+vietnameseStringToUrl(title)
-        // shareFB(fbContent)
-      }
-      
-      await browser.close();
-  } catch (error) {
-    console.log("Catch : " + error);
+    await browser.close()
   }
 }
 
 async function createGetData(url){
+  const browser = await puppeteer.launch({headless: false});
   try {
-      const browser = await puppeteer.launch({headless: false});
       const page = await browser.newPage();
       await page.setJavaScriptEnabled(false);
       await page.goto(url);
@@ -183,98 +126,41 @@ async function createGetData(url){
       await browser.close();
   } catch (error) {
       console.log("Catch : " + error);
+      await browser.close()
+      linkindex++
+      createGetData(listDataLink[linkindex])
   }
 };
 
 async function main(listLink) {
-  console.log(listLink)
-  if(oAuth2Client == ''){
-    oAuth2Client = await getAuthenticatedClient();
-    const photos = new Photos(oAuth2Client.credentials.access_token);
-    const createAlbum = await photos.albums.create(title);
-    mainWin.webContents.send('album-created',title)
-    const option = {
-      url:'https://photoslibrary.googleapis.com/v1/albums/'+createAlbum.id+':share',
-      method: 'POST'
+  fs.mkdirSync(path.join(__dirname,'kechuyengame/pc-console/'+ vietnameseStringToUrl(title)))
+  var thumbnail;
+  await asyncForEach(listLink,async (el,idx)=>{
+    const options = {
+        url: el,
+        dest: path.join(__dirname,'kechuyengame/pc-console/'+ vietnameseStringToUrl(title))
     }
-    const res = await oAuth2Client.request(option);
-    mainWin.webContents.send('album-shared',title)
-    await asyncForEach(listLink,async (el,idx)=>{
-      const options = {
-          url: el,
-          dest: './'
-      }
-      const { filename, image } = await download.image(options)
-      mainWin.webContents.send('downloaded',idx)
-      const response = await photos.mediaItems.upload(createAlbum.id, filename, './'+filename);
-      mainWin.webContents.send('uploaded',idx)
-      const fileDone = response.newMediaItemResults[0].mediaItem.filename;
-      fs.unlink(path.join(__dirname, fileDone), function(err){mainWin.webContents.send('deleted',idx)})
-    })
-    mainWin.webContents.send('link-shared-album', res.data.shareInfo.shareableUrl)
-    createGetList(res.data.shareInfo.shareableUrl,listLink.length)
-  }else{
-    const photos = new Photos(oAuth2Client.credentials.access_token);
-    const createAlbum = await photos.albums.create(title);
-    mainWin.webContents.send('album-created',title)
-    const option = {
-      url:'https://photoslibrary.googleapis.com/v1/albums/'+createAlbum.id+':share',
-      method: 'POST'
+    const { filename, image } = await download.image(options)
+    var file = filename.slice(filename.lastIndexOf('\\') + 1, filename.length)
+    if(idx == 0){
+      thumbnail = "https://images.kechuyengame.com/pc-console/"+vietnameseStringToUrl(title)+"/"+file
     }
-    const res = await oAuth2Client.request(option);
-    mainWin.webContents.send('album-shared',title)
-    await asyncForEach(listLink,async (el,idx)=>{
-      const options = {
-          url: el,
-          dest: './'
-      }
-      const { filename, image } = await download.image(options)
-      mainWin.webContents.send('downloaded',idx)
-      const response = await photos.mediaItems.upload(createAlbum.id, filename, './'+filename);
-      mainWin.webContents.send('uploaded',idx)
-      const fileDone = response.newMediaItemResults[0].mediaItem.filename;
-      fs.unlink(path.join(__dirname, fileDone), function(err){mainWin.webContents.send('deleted',idx)})
-    })
-    mainWin.webContents.send('link-shared-album', res.data.shareInfo.shareableUrl)
-    createGetList(res.data.shareInfo.shareableUrl,listLink.length)
+    html = html.replace('hereisIMG', '<p><img src ="https://images.kechuyengame.com/pc-console/'+vietnameseStringToUrl(title)+'/'+file+'"/></p>');
+  })
+  var fnData = html.replace(/Mọt tui/g,'Kể chuyện game').replace(/Mọt game/g, 'Kể chuyện game').replace(/Mọt/g,'Kể chuyện game')
+  var obj = {
+    name:title,
+    slug:vietnameseStringToUrl(title),
+    metaDes:metaDes,
+    content:fnData,
+    parentID:category,
+    thumbnail,
+    display:true,
   }
+  socket.emit('client-send-post-auto', obj);
+
 }
 
-function getAuthenticatedClient() {
-  return new Promise((resolve, reject) => {
-    const oAuth2Client = new OAuth2Client(
-      keys.web.client_id,
-      keys.web.client_secret,
-      keys.web.redirect_uris[0]
-    );
- 
-    const authorizeUrl = oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
-      scope: 'https://www.googleapis.com/auth/photoslibrary.sharing',
-    });
-    const server = http
-      .createServer(async (req, res) => {
-        try {
-          if (req.url.indexOf('/oauth2callback') > -1) {
-            const qs = new url.URL(req.url, 'http://localhost:3000')
-              .searchParams;
-            const code = qs.get('code');
-            res.end('Authentication successful! Please return to the console.');
-            server.destroy();
-            const r = await oAuth2Client.getToken(code);
-            oAuth2Client.setCredentials(r.tokens);            // console.log(createAlbum)
-            resolve(oAuth2Client);
-          }
-        } catch (e) {
-          reject(e);
-        }
-      })
-      .listen(3000, () => {
-        open(authorizeUrl, {wait: false}).then(cp => cp.unref());
-      });
-    destroyer(server);
-  });
-}
 
 let mainWin;
 function createMainWin(){
@@ -302,25 +188,7 @@ function createMainWin(){
     })
 }
 
-ipcMain.on('user-send-data',async (e,data)=>{
-  category = data.category;
-  listDataLink = data.listLink;
-  linkindex = 0;
-  createGetData(listDataLink[linkindex])
-})
 
-
-ipcMain.on('user-send-get-data-by-link',(e,data)=>{
-  
-})
-
-socket.on('add-post-auto-success',function(){
-  if(linkindex < listDataLink.length-1){
-    linkindex = linkindex + 1;
-    createGetData(listDataLink[linkindex])
-  }
-  mainWin.webContents.send('add-post-success')
-})
 
 app.on('ready',createMainWin);
 
@@ -329,9 +197,32 @@ app.on('window-all-closed',()=>{
         app.quit()
     }
 })
-
 app.on('activate',()=>{
     if(mainWin == null){
         createMainWin()
     }
 })
+
+
+
+function run(){
+  category = '5e809ecd5899281b2b7813cd';
+  linkindex = 0;
+  createGetData(listDataLink[linkindex])
+}
+
+var pageNum = 2
+
+socket.on('add-post-auto-success',function(){
+  if(linkindex < listDataLink.length-1){
+    linkindex = linkindex + 1;
+    createGetData(listDataLink[linkindex])
+  }else{
+    pageNum = pageNum - 1
+    console.log(pageNum)
+    autoPage('https://motgame.vn/pc-console' + pageNum)
+  }
+  mainWin.webContents.send('add-post-success')
+})
+
+autoPage('https://motgame.vn/pc-console2')
