@@ -19,7 +19,9 @@ button{
     <p id="arlet" style="background-color:red; color: white; position: fixed; top: 0; right: 0; opacity: 0; transition: all 1s ease;">đã copy</p>
     <select name="" id="category">
         <%data.forEach(el=>{%>
-            <option value="<%=el._id%>"><%=el.name%></option>            
+            <%if(el.parentID ){%>
+                <option value="<%=el._id%>"><%=el.name%></option>            
+            <%}%>
         <%})%>
     </select>
     <div id="link-group">
@@ -91,48 +93,21 @@ button{
     <button id="submit">Đăng hàng loạt</button>
     <h1>Trạng thái: <span id="status"></span></h1>
     <h1>Link album: <a id="linkAlbum" href=""></a></h1>
-    <div id="html" style="cursor: pointer;"></div>
-    <div id="block-hinh"></div>
-    <div id="get-data-by-link">
-        <input type="text" id="name-post" placeholder="nhập tên bài viết">
-        <input type="text" id="link-post" placeholder="Nhập link bài viết">
-        <button id="get-data">Lấy dữ liệu</button>
-    </div>
-    <div id="post-html">
+    
+    <div id="data">
 
     </div>
 </body>
 <script>
 
-
-
-document.getElementById('html').addEventListener('click', function(){
-    var input = document.createElement('input');
-        document.querySelector('body').append(input);
-        input.value = document.getElementById('html').innerText;
-        input.select();
-        document.execCommand("copy");
-        input.remove();
-        document.getElementById('arlet').style.opacity = 1;
-        setTimeout(() => {
-            document.getElementById('arlet').style.opacity = 0;
-        }, 2000);
-})
 const electron = require('electron');
 const {ipcRenderer} = electron;
 const { BrowserWindow } = electron.remote;
-// function addInput(){
-//     var listLink = document.querySelectorAll('.listLink');
-//     listLink[listLink.length - 1].addEventListener('keyup',function(){
-        
-//         var input = '<input type="text" class="listLink" placeholder="Nhập link hình">'
-//         if(!this.nextElementSibling){
-//             document.getElementById('link-group').insertAdjacentHTML('beforeend', input)
-//         }
-//         addInput()
-//     })
-// }
-// addInput()
+
+ipcRenderer.on('data',(e, data)=>{
+    document.getElementById('data').innerHTML = data.content
+})
+
 document.getElementById('get-data').addEventListener('click',function(){
     var postName = document.getElementById('name-post').value,
         postLink = document.getElementById('link-post').value;
@@ -149,6 +124,9 @@ document.getElementById('get-data').addEventListener('click',function(){
     document.getElementById('html').innerText = '';
     document.getElementById('post-html').innerText = '';
 })
+
+console.log(document.getElementById('category').options[document.getElementById('category').selectedIndex].innerText)
+
 document.getElementById('submit').addEventListener('click',function(){
     var listLink = document.querySelectorAll('.listLink');
     var arrListLink = [];
@@ -159,8 +137,10 @@ document.getElementById('submit').addEventListener('click',function(){
         }
     })
     var category = document.getElementById('category').value;
+    var folder = document.getElementById('category').options[document.getElementById('category').selectedIndex].innerText
     var obj = {
         category,
+        folder,
         listLink:arrListLink,
     }
     ipcRenderer.send('user-send-data', obj)
@@ -172,82 +152,5 @@ document.getElementById('submit').addEventListener('click',function(){
     })
     document.getElementById('html').innerText = '';
 })
-
-// ipcRenderer.on('res-albumID',function(e,data){
-//     var p = document.createElement('p');
-//     p.innerHTML = data;
-//     p.setAttribute('class','link-img');
-//     p.addEventListener('click',()=>{
-//         var input = document.createElement('input');
-//         document.querySelector('body').append(input);
-//         input.value = p.innerHTML;
-//         input.select();
-//         document.execCommand("copy");
-//         input.remove();
-//         document.getElementById('arlet').style.opacity = 1;
-//         setTimeout(() => {
-//             document.getElementById('arlet').style.opacity = 0;
-//         }, 2000);
-//     })
-//     var img = document.createElement('img');
-//     img.setAttribute('class','current-img')
-//     img.setAttribute('src', data)
-//     document.getElementById('block-hinh').append(img)
-//     document.getElementById('block-hinh').append(p)
-//     var previewValue = document.getElementById('html').innerText;
-//     document.getElementById('html').innerText = '';
-//     document.getElementById('html').append(previewValue+ '<p><img alt="" src="'+data+'" /></p>')
-//     var previewValueGetData = document.getElementById('post-html').innerText;
-//     document.getElementById('post-html').innerText = '';
-//     document.getElementById('post-html').append(previewValueGetData+ '<p><img alt="" src="'+data+'" /></p>')
-
-// })
-
-ipcRenderer.on('album-created', function(e, data){
-    document.getElementById('status').innerHTML = 'đã tạo album tên: '+ data;
-})
-ipcRenderer.on('album-shared', function(e, data){
-    document.getElementById('status').innerHTML = 'đã chia sẽ album tên: '+ data;
-})
-ipcRenderer.on('downloaded', function(e, data){
-    document.getElementById('status').innerHTML = 'Đã tải xuống: '+ (data + 1) + 'hình';
-})
-ipcRenderer.on('uploaded', function(e, data){
-    document.getElementById('status').innerHTML = 'Đã tải lên: '+ (data + 1) + 'hình';
-})
-ipcRenderer.on('deleted', function(e, data){
-    document.getElementById('status').innerHTML = 'Đã xóa: '+ (data + 1) + 'hình';
-})
-ipcRenderer.on('getlisted', function(e){
-    document.getElementById('status').innerHTML = 'Đã tải hình xong, nếu hình không hiện, vui lòng vào link album để lấy hình';
-})
-// ipcRenderer.on('link-shared-album', function(e, data){
-//     document.getElementById('linkAlbum').innerHTML = data;
-// })
-ipcRenderer.on('geting-img-link', function(e,data){
-    document.getElementById('status').innerHTML = 'Đang lấy link hình '+(data + 1);
-})
-
-ipcRenderer.on('add-post-success',function(){
-    document.getElementById('status').innerHTML = 'dang bai thanh cong'
-})
-
-// ipcRenderer.on('res-html-get-data',function(e,data){
-//     document.getElementById('post-html').innerHTML = ''
-//     var fnData = data.replace(/Mọt tui/g,'crackchuan').replace(/Mọt game/g, 'crackchuan').replace(/Mọt/g,'crackchuan')
-//     document.getElementById('post-html').append(fnData)
-// })
-// document.getElementById('post-html').addEventListener('click', function(){
-//     var input = document.createElement('input');
-//         document.querySelector('body').append(input);
-//         input.value = document.getElementById('post-html').innerText;
-//         input.select();
-//         document.execCommand("copy");
-//         input.remove();
-//         document.getElementById('arlet').style.opacity = 1;
-//         setTimeout(() => {
-//             document.getElementById('arlet').style.opacity = 0;
-//         }, 2000);
-// })
 </script>
 </html>

@@ -1,30 +1,35 @@
-function getData(){
-    var arrIMG = []
-    document.querySelectorAll('#primary .article-content-off > *').forEach(el=>{
-        if(el.nodeName == 'UL' || el.nodeName == 'DIV'){
-            if(el.firstElementChild){
-                if(el.firstElementChild.nodeName !='NOSCRIPT' ){
-                    el.remove()
-                }
-            }
-        }
-    })
-    document.querySelectorAll('#primary .article-content-off > *').forEach(el=>{
-        if(el.innerHTML.indexOf('noscript')!=-1){
-
-            arrIMG.push(el.firstElementChild.firstElementChild.getAttribute('src'))
-            el.remove()
-        }
-        if(el.childElementCount > 0){
-            Array.from(el.childNodes).forEach(el1=>{
-                if(el1.nodeName == 'A'){
-                    el1.replaceWith(...el1.childNodes)
-                }
-            })
-        }
-    })
-    var obj = {
-        arrIMG,
-        html : document.querySelector('#primary .article-content-off').innerHTML
-    }
+if(document.querySelector('.klw-new-content iframe')){
+    document.querySelector('.klw-new-content iframe').remove()
 }
+
+if(document.querySelector('.link-content-footer')){
+    document.querySelector('.link-content-footer').remove()
+}
+
+if(document.getElementById('ContentPlaceHolder1_ContentPlaceHolder1_ctrNewsDetail_lstRelation')){
+    document.getElementById('ContentPlaceHolder1_ContentPlaceHolder1_ctrNewsDetail_lstRelation').remove()
+}
+
+document.querySelectorAll('.VCSortableInPreviewMode a').forEach(el=>{
+    el.remove()
+})
+
+if(document.querySelector('.VCSortableInPreviewMode')){
+   
+}
+if(document.querySelector('.knc-menu-nav')){
+    document.querySelector('.knc-menu-nav').remove()
+}
+
+var listIMG = []
+
+document.querySelectorAll('.VCSortableInPreviewMode img').forEach(el=>{
+    el.removeAttribute('data-original')
+    listIMG.push(el.getAttribute('src'))
+    el.setAttribute('src','hereisIMG')
+})
+
+var title = document.querySelector('.kbwc-title').innerText
+var des = document.querySelector('.knc-sapo').innerText
+var content = document.querySelector('.klw-new-content').innerHTML
+

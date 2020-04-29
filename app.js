@@ -13,7 +13,12 @@ var metaDes = '';
 var title = '';
 var linkindex = 0;
 var listDataLink = [];
-var category = '';
+var category = '5e902b898d469a71e031651e';
+var folder = 'thu-thuat';
+var d = 30
+var m = 11
+var y = 2011
+
 var VietnameseSigns = [ "aAeEoOuUiIdDyY-",
 	"áàạảãâấầậẩẫăắằặẳẵ",
 	"ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
@@ -133,32 +138,35 @@ async function createGetData(url){
 };
 
 async function main(listLink) {
-  fs.mkdirSync(path.join(__dirname,'kechuyengame/pc-console/'+ vietnameseStringToUrl(title)))
-  var thumbnail;
-  await asyncForEach(listLink,async (el,idx)=>{
-    const options = {
-        url: el,
-        dest: path.join(__dirname,'kechuyengame/pc-console/'+ vietnameseStringToUrl(title))
+  try{
+    fs.mkdirSync(path.join(__dirname,'kechuyengame3/'+folder+'/'+ vietnameseStringToUrl(title)))
+    var thumbnail;
+    await asyncForEach(listLink,async (el,idx)=>{
+      const options = {
+          url: el,
+          dest: path.join(__dirname,'kechuyengame3/'+folder+'/'+ vietnameseStringToUrl(title))
+      }
+      const { filename, image } = await download.image(options)
+      var file = filename.slice(filename.lastIndexOf('\\') + 1, filename.length)
+      if(idx == 0){
+        thumbnail = "https://images3.kechuyengame.com/'+folder+'/"+vietnameseStringToUrl(title)+"/"+file
+      }
+      html = html.replace('hereisIMG', '<p><img src ="https://images3.kechuyengame.com/'+folder+'/'+vietnameseStringToUrl(title)+'/'+file+'"/></p>');
+    })
+    var fnData = html.replace(/Mọt tui/g,'Kể chuyện game').replace(/Mọt game/g, 'Kể chuyện game').replace(/Mọt/g,'Kể chuyện game')
+    var obj = {
+      name:title,
+      slug:vietnameseStringToUrl(title),
+      metaDes:metaDes,
+      content:fnData,
+      parentID:category,
+      thumbnail,
+      display:true,
     }
-    const { filename, image } = await download.image(options)
-    var file = filename.slice(filename.lastIndexOf('\\') + 1, filename.length)
-    if(idx == 0){
-      thumbnail = "https://images.kechuyengame.com/pc-console/"+vietnameseStringToUrl(title)+"/"+file
-    }
-    html = html.replace('hereisIMG', '<p><img src ="https://images.kechuyengame.com/pc-console/'+vietnameseStringToUrl(title)+'/'+file+'"/></p>');
-  })
-  var fnData = html.replace(/Mọt tui/g,'Kể chuyện game').replace(/Mọt game/g, 'Kể chuyện game').replace(/Mọt/g,'Kể chuyện game')
-  var obj = {
-    name:title,
-    slug:vietnameseStringToUrl(title),
-    metaDes:metaDes,
-    content:fnData,
-    parentID:category,
-    thumbnail,
-    display:true,
+    socket.emit('client-send-post-auto', obj);
+  }catch{
+    loop()
   }
-  socket.emit('client-send-post-auto', obj);
-
 }
 
 
@@ -203,26 +211,155 @@ app.on('activate',()=>{
     }
 })
 
-
-
-function run(){
-  category = '5e809ecd5899281b2b7813cd';
+ipcMain.on('user-send-data',async (e,data)=>{
+  category = data.category
+  folder = vietnameseStringToUrl(data.folder)
+  listFolder = await fs.readdirSync('./kechuyengame3')
+  console.log(listFolder)
+  if(listFolder.indexOf(folder) === -1){
+    await fs.mkdirSync('./kechuyengame3/' + folder)
+  }
+  listDataLink = data.listLink
   linkindex = 0;
   createGetData(listDataLink[linkindex])
-}
-
-var pageNum = 2
-
-socket.on('add-post-auto-success',function(){
-  if(linkindex < listDataLink.length-1){
-    linkindex = linkindex + 1;
-    createGetData(listDataLink[linkindex])
-  }else{
-    pageNum = pageNum - 1
-    console.log(pageNum)
-    autoPage('https://motgame.vn/pc-console' + pageNum)
-  }
-  mainWin.webContents.send('add-post-success')
 })
 
-autoPage('https://motgame.vn/pc-console2')
+
+
+async function crawlGenk(url){
+  const browser = await puppeteer.launch({headless: true});
+  try {
+    const page = await browser.newPage();
+    await page.setJavaScriptEnabled(false);
+    await page.goto(url);
+    var obj = await page.evaluate(()=>{
+      if(document.querySelector('.klw-new-content iframe')){
+        document.querySelector('.klw-new-content iframe').remove()
+      }
+      
+      if(document.querySelector('.link-content-footer')){
+          document.querySelector('.link-content-footer').remove()
+      }
+      
+      if(document.getElementById('ContentPlaceHolder1_ContentPlaceHolder1_ctrNewsDetail_lstRelation')){
+        document.getElementById('ContentPlaceHolder1_ContentPlaceHolder1_ctrNewsDetail_lstRelation').remove()
+      }
+      
+      document.querySelectorAll('.VCSortableInPreviewMode a').forEach(el=>{
+          el.remove()
+      })
+      
+      if(document.querySelector('.VCSortableInPreviewMode')){
+        
+      }
+      if(document.querySelector('.knc-menu-nav')){
+          document.querySelector('.knc-menu-nav').remove()
+      }
+      
+      var listIMG = []
+      
+      document.querySelectorAll('.VCSortableInPreviewMode img').forEach(el=>{
+          el.removeAttribute('data-original')
+          listIMG.push(el.getAttribute('src'))
+          el.replaceWith('hereisIMG')
+      })
+      
+      var title = document.querySelector('.kbwc-title').innerText
+      var metaDes = document.querySelector('.knc-sapo').innerText
+      var html = document.querySelector('.klw-new-content').innerHTML
+      var obj = {
+        title,metaDes,html, listIMG
+      }
+      return obj
+    })
+
+    html = obj.html
+    metaDes = obj.metaDes;
+    title = obj.title;
+    main(obj.listIMG).catch(e=>console.error(e))
+    await browser.close()
+  } catch (error) {
+    await browser.close()
+    loop()
+  }
+}
+
+
+async function getLinkGenk(url){
+  const browser = await puppeteer.launch({headless: true});
+  try {
+    const page = await browser.newPage();
+    await page.setJavaScriptEnabled(false);
+    await page.goto(url);
+    var listLink = await page.evaluate(()=>{
+      var listLink = []
+      document.querySelectorAll('.knsw-list li .knswli-left a').forEach(el=>{
+        listLink.push(el.getAttribute('href'))
+      })
+      return listLink
+    })
+    listDataLink = listLink
+    crawlGenk('https://genk.vn'+listDataLink[linkindex])
+    console.log(listDataLink[linkindex])
+
+    await browser.close()
+  }catch{
+    await browser.close()
+  }
+}
+
+
+
+getLinkGenk('https://genk.vn/'+folder+'/'+d+'-'+m+'-'+y+'.chn')
+
+function loop(){
+  linkindex = linkindex + 1;
+  if(linkindex < listDataLink.length){
+    crawlGenk('https://genk.vn'+listDataLink[linkindex])
+  }else{
+    linkindex = 0
+    console.log(d, '/' , m , '/' ,y)
+    d++
+    if(d == 32){
+      d = 1
+      m++
+      if(m == 13){
+        d = 1
+        m = 1
+        y++
+      }
+    }
+    getLinkGenk('https://genk.vn/'+folder+'/'+d+'-'+m+'-'+y+'.chn')
+  }
+}
+
+socket.on('add-post-auto-success',function(){
+  // if(linkindex < listDataLink.length-1){
+  //   linkindex = linkindex + 1;
+  //   createGetData(listDataLink[linkindex])
+  // }else{
+  //   console.log('done')
+  // }
+  // mainWin.webContents.send('add-post-success')
+  
+  linkindex = linkindex + 1;
+  if(linkindex < listDataLink.length){
+    console.log(listDataLink[linkindex])
+    crawlGenk('https://genk.vn'+listDataLink[linkindex])
+  }else{
+    linkindex = 0
+    console.log(d, '/' , m , '/' ,y)
+    d++
+    if(d == 32){
+      d = 1
+      m++
+      if(m == 13){
+        d = 1
+        m = 1
+        y++
+      }
+    }
+    getLinkGenk('https://genk.vn/'+folder+'/'+d+'-'+m+'-'+y+'.chn')
+  }
+})
+
